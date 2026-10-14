@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Sorter</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2 { color: #2c3e50; }
+        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
+        textarea { width: 100%; height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical; }
+        input[type="file"] { margin-top: 5px; display: block; }
+        button { background-color: #27ae60; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; margin-top: 20px; width: 100%; font-weight: bold; }
+        button:hover { background-color: #219653; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 25px; display: none; }
+        .results-table th, .results-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .results-table th { background-color: #2980b9; color: white; }
+        .results-table tr:nth-child(even) { background-color: #f2f2f2; }
+        .badge { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .matched { background: #2ecc71; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📄 Resume Sorter App</h1>
+    <p>Rank multiple resumes instantly based on keyword matching for a specific job profile.</p>
+
+    <!-- Job Profile Keywords -->
+    <label for="keywords">Required Job Keywords / Skills (Comma-separated):</label>
+    <textarea id="keywords" placeholder="e.g., Python, React, SQL, Project Management, Communication"></textarea>
+
+    <!-- Resume Upload -->
+    <label for="resumeFiles">Upload Resumes (.txt files only for this basic version):</label>
+    <input type="file" id="resumeFiles" multiple accept=".txt">
+
+    <button onclick="sortResumes()">Analyze and Rank Resumes</button>
+
+    <!-- Results Table -->
+    <h2>Ranked Results</h2>
+    <table class="results-table" id="resultsTable">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Candidate / File Name</th>
+                <th>Match Score</th>
+                <th>Matched Keywords</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+            <!-- Dynamic rows will be inserted here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function sortResumes() {
+        const keywordInput = document.getElementById('keywords').value;
+        const fileInput = document.getElementById('resumeFiles');
+        const table = document.getElementById('resultsTable');
+        const tbody = document.getElementById('resultsBody');
+
+        
+        tbody.innerHTML = "";
+
+        
+        if (!keywordInput.trim()) {
+            alert("Please enter job keywords first.");
+            return;
+        }
+        const keywords = keywordInput.toLowerCase().split(',').map(kw => kw.trim()).filter(kw => kw.length > 0);
+
+        const files = fileInput.files;
+        if (files.length === 0) {
+            alert("Please upload at least one .txt resume file.");
+            return;
+        }
+
+        let processedCount = 0;
+        const candidatesData = [];
+
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result.toLowerCase();
+                let matchCount = 0;
+                let matchedWords = [];
+
+                
+                keywords.forEach(keyword => {
+                    if (text.includes(keyword)) {
+                        matchCount++;
+                        matchedWords.push(keyword);
+                    }
+                });
+
+                
+                const matchPercentage = Math.round((matchCount / keywords.length) * 100);
+
+                candidatesData.push({
+                    name: file.name.replace('.txt', ''),
+                    score: matchPercentage,
+                    matches: matchedWords
+                });
+
+                processedCount++;
+
+                
+                if (processedCount === files.length) {
+                    displayResults(candidatesData, table, tbody);
+                }
+            };
+
+            reader.readAsText(file);
+        }
+    }
+
+    function displayResults(data, table, tbody) {
+        
+        data.sort((a, b) => b.score - a.score);
+
+        
+        data.forEach((candidate, index) => {
+            const row = tbody.insertRow();
+            
+            const cellRank = row.insertCell(0);
+            const cellName = row.insertCell(1);
+            const cellScore = row.insertCell(2);
+            const cellMatches = row.insertCell(3);
+
+            cellRank.innerHTML = `<strong>#${index + 1}</strong>`;
+            cellName.textContent = candidate.name;
+            cellScore.innerHTML = `<span class="badge ${candidate.score > 50 ? 'matched' : ''}">${candidate.score}%</span>`;
+            cellMatches.textContent = candidate.matches.join(', ') || 'None';
+        });
+
+        
+        table.style.display = 'table';
+    }
+</script>
+</body>
+</html>
